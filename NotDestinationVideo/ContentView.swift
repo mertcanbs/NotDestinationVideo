@@ -1,26 +1,43 @@
-//
-//  ContentView.swift
-//  NotDestinationVideo
-//
-//  Created by Mert on 11/16/23.
-//
+/*
+Abstract:
+A view that presents the app's user interface.
+*/
 
 import SwiftUI
-import RealityKit
-import RealityKitContent
 
+// The app uses `LibraryView` as its main UI.
 struct ContentView: View {
+    
+    /// The library's selection path.
+    @State private var navigationPath = [Video]()
+    /// A Boolean value that indicates whether the app is currently presenting an immersive space.
+    @State private var isPresentingSpace = false
+    /// The app's player model.
+    @Environment(PlayerModel.self) private var player
+    
     var body: some View {
-        VStack {
-            Model3D(named: "Scene", bundle: realityKitContentBundle)
-                .padding(.bottom, 50)
-
-            Text("Hello, world!")
+        #if os(visionOS)
+        switch player.presentation {
+        case .fullWindow:
+            // Present the player full window and begin playback.
+            PlayerView()
+                .onAppear {
+                    player.play()
+                }
+        default:
+            // Show the app's content library by default.
+            LibraryView(path: $navigationPath, isPresentingSpace: $isPresentingSpace)
         }
-        .padding()
+        #else
+        LibraryView(path: $navigationPath)
+            // A custom modifier that shows the player in a fullscreen modal presentation in iOS and tvOS.
+            .fullScreenCoverPlayer(player: player)
+        #endif
     }
 }
 
-#Preview(windowStyle: .automatic) {
+#Preview {
     ContentView()
+        .environment(PlayerModel())
+        .environment(VideoLibrary())
 }
